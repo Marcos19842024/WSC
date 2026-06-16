@@ -19,12 +19,12 @@ export const MainMenuScreen = () => {
 
   const menuItems = [
     {
-      id: 'checklist',
-      title: 'Checklist',
-      description: 'Realiza y gestiona checklists',
+      id: 'dailyEntry',
+      title: 'Entrada Diaria',
+      description: 'Registra y gestiona entradas diarias',
       icon: 'checklist',
       color: '#4CAF50',
-      route: 'Checklist',
+      route: 'DailyEntry',
     },
     {
       id: 'driveFiles',
@@ -34,6 +34,22 @@ export const MainMenuScreen = () => {
       color: '#05aaca',
       route: 'DriveFiles',
     },
+    {
+      id: 'export',
+      title: 'Exportar Datos',
+      description: 'Exporta los datos registrados',
+      icon: 'file-download',
+      color: '#FF9800',
+      route: 'Export',
+    },
+    {
+      id: 'studentList',
+      title: 'Lista de Estudiantes',
+      description: 'Administra la lista de estudiantes',
+      icon: 'people',
+      color: '#2196F3',
+      route: 'StudentList',
+    }
   ];
 
   useEffect(() => {
@@ -54,12 +70,20 @@ export const MainMenuScreen = () => {
   const handleMenuItemPress = (route: string) => {
 
     switch (route) {
-      case'Checklist':
-        navigation.navigate('Checklist');
+      case'DailyEntry':
+        navigation.navigate('DailyEntry');
         break;
 
       case'DriveFiles':
         navigation.navigate('DriveFiles');
+        break;
+
+      case'Export':
+        navigation.navigate('Export');
+        break;
+
+      case'StudentList':
+        navigation.navigate('StudentList');
         break;
 
       default:
@@ -77,7 +101,7 @@ export const MainMenuScreen = () => {
         />
         <View style={stylesmainMenu.headerText}>
           <View style={stylesmainMenu.nameVersion}>
-            <Text style={stylesmainMenu.appName}>WSC</Text>
+            <Text style={stylesmainMenu.appName}>Wen Scrap Confort</Text>
             <Text style={stylesmainMenu.appVersion}>Versión 1.0.0</Text>
           </View>
         </View>
