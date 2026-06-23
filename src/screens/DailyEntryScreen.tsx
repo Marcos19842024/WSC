@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, JSX } from 'react';
 import {
   View,
   FlatList,
@@ -10,9 +10,7 @@ import {
 } from 'react-native';
 import {
   Button,
-  Title,
   TextInput as PaperInput,
-  IconButton,
 } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -20,14 +18,31 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 const STUDENTS_KEY = '@students';
 const RECORDS_KEY = '@daily_records';
 
-export const DailyEntryScreen = () => {
-  const [students, setStudents] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [entries, setEntries] = useState({});
-  const [modalVisible, setModalVisible] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState(null);
-  const [tempValue, setTempValue] = useState('');
+interface Student {
+  id: string;
+  name: string;
+}
+
+interface Entries {
+  [studentId: string]: string;
+}
+
+interface DailyRecords {
+  [dateKey: string]: Entries;
+}
+
+interface StudentItemProps {
+  item: Student;
+}
+
+export const DailyEntryScreen: React.FC = () => {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+  const [entries, setEntries] = useState<Entries>({});
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
+  const [tempValue, setTempValue] = useState<string>('');
 
   useEffect(() => {
     loadStudents();
@@ -39,53 +54,74 @@ export const DailyEntryScreen = () => {
     }
   }, [selectedDate, students]);
 
-  const loadStudents = async () => {
+  const loadStudents = async (): Promise<void> => {
     const stored = await AsyncStorage.getItem(STUDENTS_KEY);
-    if (stored) setStudents(JSON.parse(stored));
+    if (stored) setStudents(JSON.parse(stored) as Student[]);
   };
 
-  const loadEntriesForDate = async () => {
+  const loadEntriesForDate = async (): Promise<void> => {
     const stored = await AsyncStorage.getItem(RECORDS_KEY);
-    const allRecords = stored ? JSON.parse(stored) : {};
+    const allRecords = stored ? (JSON.parse(stored) as DailyRecords) : ({} as DailyRecords);
     const dateKey = selectedDate.toISOString().split('T')[0];
-    const dayEntries = allRecords[dateKey] || {};
+    const dayEntries = allRecords[dateKey] || ({} as Entries);
     setEntries(dayEntries);
   };
 
-  const saveCurrentEntries = async () => {
-    const stored = await AsyncStorage.getItem(RECORDS_KEY);
-    const allRecords = stored ? JSON.parse(stored) : {};
-    const dateKey = selectedDate.toISOString().split('T')[0];
-    allRecords[dateKey] = entries;
-    await AsyncStorage.setItem(RECORDS_KEY, JSON.stringify(allRecords));
+  const saveCurrentEntries = async (): Promise<void> => {
+    if (Object.keys(entries).length === 0) {
+      // No hay datos que guardar, pero no mostramos error
+      return;
+    }
+
+    try {
+      const stored = await AsyncStorage.getItem(RECORDS_KEY);
+      const allRecords = stored ? (JSON.parse(stored) as DailyRecords) : ({} as DailyRecords);
+      const dateKey = selectedDate.toISOString().split('T')[0];
+      allRecords[dateKey] = entries;
+      await AsyncStorage.setItem(RECORDS_KEY, JSON.stringify(allRecords));
+      console.log(`✅ Datos guardados para: ${dateKey}`);
+    } catch (error) {
+      console.error('Error al guardar:', error);
+    }
   };
 
-  const updateEntry = (studentId, value) => {
+  const updateEntry = (studentId: string, value: string): void => {
     const newEntries = { ...entries, [studentId]: value };
     setEntries(newEntries);
   };
 
-  const openModal = (student) => {
+  const openModal = (student: Student): void => {
     setCurrentStudent(student);
     const existing = entries[student.id] || '';
     setTempValue(existing);
     setModalVisible(true);
   };
 
-  const saveModalValue = () => {
+  const saveModalValue = async (): Promise<void> => {
     if (currentStudent) {
       updateEntry(currentStudent.id, tempValue);
+      // Guardar inmediatamente después de modificar
+      await saveCurrentEntries();
     }
     setModalVisible(false);
     setCurrentStudent(null);
   };
 
-  const onDateChange = (event, date) => {
+  const onDateChange = async (_event: unknown, date?: Date): Promise<void> => {
     setShowDatePicker(false);
-    if (date) setSelectedDate(date);
+    if (date) {
+      // Guardar datos actuales antes de cambiar de fecha
+      await saveCurrentEntries();
+      setSelectedDate(date);
+    }
   };
 
-  const renderStudentItem = ({ item }) => {
+  // Guardar manualmente con el botón
+  const handleManualSave = async (): Promise<void> => {
+    await saveCurrentEntries();
+  };
+
+  const renderStudentItem = ({ item }: StudentItemProps): JSX.Element => {
     const value = entries[item.id] || '';
     let displayValue = value === '' ? '—' : value;
 
@@ -101,13 +137,19 @@ export const DailyEntryScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Title style={styles.title}>Registro Diario</Title>
 
       <View style={styles.dateRow}>
         <Button mode="outlined" onPress={() => setShowDatePicker(true)}>
           {selectedDate.toLocaleDateString()}
         </Button>
-        <IconButton icon="content-save" onPress={saveCurrentEntries} />
+        <Button 
+          mode="contained" 
+          onPress={handleManualSave}
+          style={styles.saveButton}
+          icon="content-save"
+        >
+          Guardar
+        </Button>
       </View>
 
       {showDatePicker && (
@@ -184,16 +226,26 @@ export const DailyEntryScreen = () => {
       </Modal>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#f5f5f5' },
-  title: { marginBottom: 16, textAlign: 'center' },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  title: { fontSize: 20, fontWeight: 'bold' },
+  saveStatus: { fontSize: 12, color: '#4CAF50' },
   dateRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  saveButton: {
+    backgroundColor: '#4CAF50',
   },
   studentRow: {
     flexDirection: 'row',

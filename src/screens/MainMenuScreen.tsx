@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,12 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
-import * as Updates from 'expo-updates';
 import Toast from 'react-native-toast-message';
 import { stylesmainMenu } from 'src/styles/mainMenu';
 import { ScreenNavigationProp } from 'src/types/navigation';
 
 export const MainMenuScreen = () => {
   const navigation = useNavigation<ScreenNavigationProp>();
-  const [hasUpdate, setHasUpdate] = useState(false);
 
   const menuItems = [
     {
@@ -42,30 +40,7 @@ export const MainMenuScreen = () => {
       color: '#FF9800',
       route: 'Export',
     },
-    {
-      id: 'studentList',
-      title: 'Lista de Estudiantes',
-      description: 'Administra la lista de estudiantes',
-      icon: 'people',
-      color: '#2196F3',
-      route: 'StudentList',
-    }
   ];
-
-  useEffect(() => {
-    checkForUpdates();
-  }, []);
-
-  const checkForUpdates = async () => {
-    try {
-      if (!__DEV__) {
-        const update = await Updates.checkForUpdateAsync();
-        setHasUpdate(update.isAvailable);
-      }
-    } catch (error) {
-      console.error('Error checking for updates:', error);
-    }
-  };
 
   const handleMenuItemPress = (route: string) => {
 
@@ -75,15 +50,11 @@ export const MainMenuScreen = () => {
         break;
 
       case'DriveFiles':
-        navigation.navigate('DriveFiles');
+        navigation.navigate('DriveFiles', { openFromMenu: true });
         break;
 
       case'Export':
         navigation.navigate('Export');
-        break;
-
-      case'StudentList':
-        navigation.navigate('StudentList');
         break;
 
       default:

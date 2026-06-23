@@ -7,7 +7,6 @@ import {
   DailyEntryScreen,
   DriveFilesScreen,
   ExportScreen,
-  StudentListScreen
 } from './src/screens';
 
 const Stack = createStackNavigator();
@@ -61,13 +60,6 @@ export default function App() {
             component={ExportScreen}
             options={{
               title: 'Exportar Datos'
-            }}
-          />
-          <Stack.Screen 
-            name="StudentList" 
-            component={StudentListScreen}
-            options={{
-              title: 'Lista de Estudiantes'
             }}
           />
         </Stack.Navigator>
